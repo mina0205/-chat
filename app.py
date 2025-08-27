@@ -130,18 +130,25 @@ def chat():
 @app.route("/save-chat", methods=["POST"])
 def save_chat():
     user_id = request.json.get("user_id")
+    chat_id = request.json.get("chat_id")
     history = request.json.get("history")
 
-    if not user_id or not history:
-        return jsonify({"error": "user_id and history are required"}), 400
+    if not all([user_id, chat_id, history]):
+        return jsonify({"error": "user_id, chat_id, and history are required"}), 400
 
     if messages_collection is not None:
         try:
-            messages_collection.insert_one({
-                "user_id": user_id,
-                "messages": history,
-                "saved_at": datetime.utcnow()
-            })
+            # Use update_one with upsert=True to save or overwrite the conversation
+            messages_collection.update_one(
+                {"chat_id": chat_id, "user_id": user_id},
+                {
+                    "$set": {
+                        "messages": history,
+                        "saved_at": datetime.utcnow()
+                    }
+                },
+                upsert=True
+            )
             return jsonify({"message": "Conversation saved successfully"})
         except Exception as e:
             print(f"⚠️ WARNING: Failed to save conversation: {e}")
@@ -170,22 +177,7 @@ def get_conversations():
         return jsonify({"error": "Database not connected"}), 500
 
 
-@app.route("/new-chat", methods=["POST"])
-def new_chat():
-    user_id = request.json.get("user_id")
-    if not user_id:
-        return jsonify({"error": "user_id is required"}), 400
 
-    if messages_collection is not None:
-        try:
-            result = messages_collection.delete_many({"user_id": user_id})
-            print(f"Deleted {result.deleted_count} conversations for user_id: {user_id}")
-            return jsonify({"message": "Conversations deleted successfully"})
-        except Exception as e:
-            print(f"⚠️ WARNING: Failed to delete conversations: {e}")
-            return jsonify({"error": str(e)}), 500
-    else:
-        return jsonify({"message": "No database connection, frontend reset only"})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

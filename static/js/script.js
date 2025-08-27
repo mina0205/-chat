@@ -1,47 +1,42 @@
 $(document).ready(function() {
     let conversationHistory = [];
+    let currentChatId = null;
     const userId = localStorage.getItem('user_id') || crypto.randomUUID();
     localStorage.setItem('user_id', userId);
 
-    // Initial Greeting
-    if ($('#chat-box').children().length === 0) {
+    // --- Helper Functions ---
+    function startNewChat() {
+        currentChatId = crypto.randomUUID();
+        conversationHistory = [];
+        $('#chat-box').empty();
         $('#chat-box').append('<div class="message bot-message">안녕! 심심할 땐 나 심심이랑 놀자☺️ 뭐하고 놀고싶어 ?</div>');
+        console.log(`Started new chat with ID: ${currentChatId}`);
+    }
+
+    function loadChat(chatData) {
+        if (!chatData || !chatData.messages || !chatData.chat_id) {
+            console.error("Invalid chat data provided to loadChat");
+            return;
+        }
+        currentChatId = chatData.chat_id;
+        conversationHistory = chatData.messages;
+        $('#chat-box').empty();
+        conversationHistory.forEach(msg => {
+            $('#chat-box').append(`<div class="message ${msg.role}-message">${msg.content}</div>`);
+        });
+        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        $('#memory-modal').hide();
+        console.log(`Loaded chat with ID: ${currentChatId}`);
     }
 
     // --- Event Handlers ---
-
-    // Send message handler
     $('#send-btn').on('click', sendMessage);
     $('#user-input').on('keypress', function(e) {
         if (e.which === 13) sendMessage();
     });
 
-    // New Chat handler
-    $('#new-chat-btn').on('click', function() {
-        $.ajax({
-            url: '/new-chat',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ user_id: userId }),
-            success: function(response) {
-                console.log(response.message);
-                $('#chat-box').empty();
-                conversationHistory = [];
-                $('#chat-box').append('<div class="message bot-message">안녕! 심심할 땐 나 심심이랑 놀자☺️ 뭐하고 놀고싶어 ?</div>');
-                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-            },
-            error: function() {
-                console.error("Failed to delete conversations on the server.");
-                alert("서버에서 대화 기록을 삭제하는 데 실패했습니다. UI만 초기화합니다.");
-                $('#chat-box').empty();
-                conversationHistory = [];
-                $('#chat-box').append('<div class="message bot-message">안녕! 심심할 땐 나 심심이랑 놀자☺️ 뭐하고 놀고싶어 ?</div>');
-                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-            }
-        });
-    });
+    $('#new-chat-btn').on('click', startNewChat);
 
-    // Save Chat handler
     $('#save-btn').on('click', function() {
         if (conversationHistory.length === 0) {
             alert("저장할 대화 내용이 없습니다.");
@@ -53,6 +48,7 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({
                 user_id: userId,
+                chat_id: currentChatId,
                 history: conversationHistory
             }),
             success: function(response) {
@@ -65,7 +61,6 @@ $(document).ready(function() {
         });
     });
 
-    // Memory button handler
     $('#memory-btn').on('click', function() {
         $.ajax({
             url: `/get-conversations?user_id=${userId}`,
@@ -75,11 +70,17 @@ $(document).ready(function() {
                 memoryList.empty();
                 if (response.conversations && response.conversations.length > 0) {
                     response.conversations.forEach(conv => {
-                        const convDiv = $('<div class="conversation"></div>');
-                        // Add a timestamp
-                        convDiv.append(`<p class="timestamp">Saved at: ${new Date(conv.saved_at).toLocaleString()}</p>`);
-                        conv.messages.forEach(msg => {
-                            convDiv.append(`<div class="message ${msg.role}-message">${msg.content}</div>`);
+                        const firstUserMessage = conv.messages.find(m => m.role === 'user')?.content || '(No user message)';
+                        const convDiv = $(`<div class="conversation-item" data-chat-id="${conv.chat_id}"></div>`);
+                        convDiv.append(`<p class="conversation-title">${firstUserMessage.substring(0, 30)}...</p>`);
+                        convDiv.append(`<p class="conversation-date">Saved: ${new Date(conv.saved_at).toLocaleString()}</p>`);
+                        
+                        // Store full conversation data with the element
+                        convDiv.data('conversation', conv);
+
+                        convDiv.on('click', function() {
+                            const chatData = $(this).data('conversation');
+                            loadChat(chatData);
                         });
                         memoryList.append(convDiv);
                     });
@@ -98,7 +99,6 @@ $(document).ready(function() {
     $('.close-btn').on('click', function() {
         $('#memory-modal').hide();
     });
-
     $(window).on('click', function(event) {
         if ($(event.target).is('#memory-modal')) {
             $('#memory-modal').hide();
@@ -106,14 +106,12 @@ $(document).ready(function() {
     });
 
     // --- Core Functions ---
-
     function sendMessage() {
         const userInput = $('#user-input').val();
-        if (userInput.trim() === '') {
-            return;
-        }
+        if (userInput.trim() === '') return;
 
-        conversationHistory.push({ "role": "user", "content": userInput });
+        const userMessage = { "role": "user", "content": userInput };
+        conversationHistory.push(userMessage);
         $('#chat-box').append(`<div class="message user-message">${userInput}</div>`);
         $('#user-input').val('');
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
@@ -127,14 +125,14 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({
                 message: userInput,
-                history: conversationHistory,
+                history: conversationHistory.slice(0, -1), // Send history *before* the new message
                 user_id: userId
             }),
             success: function(response) {
                 $('.typing-indicator').remove();
-                const botMessage = response.reply;
-                conversationHistory.push({ "role": "assistant", "content": botMessage });
-                $('#chat-box').append(`<div class="message bot-message">${botMessage}</div>`);
+                const botMessage = { "role": "assistant", "content": response.reply };
+                conversationHistory.push(botMessage);
+                $('#chat-box').append(`<div class="message bot-message">${response.reply}</div>`);
                 $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
             },
             error: function() {
@@ -144,4 +142,7 @@ $(document).ready(function() {
             }
         });
     }
+
+    // Initial load
+    startNewChat();
 });
