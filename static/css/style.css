@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Noto Sans KR', sans-serif;
-    background-color: rgba(26, 43, 76, 0.9); /* Dark blue with slight transparency */
+    background-color: rgba(221, 221, 233, 0.9); /* 바탕색 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -26,7 +26,7 @@ body {
     flex-grow: 1;
     padding: 20px;
     overflow-y: auto;
-    background-color: #eef1f5; /* Light background for chat area */
+    background-color: #f7fafd; /* Light background for chat area */
     border-bottom: 1px solid #e0e0e0;
     display: flex;
     flex-direction: column;
@@ -39,7 +39,7 @@ body {
 }
 
 .chat-box::-webkit-scrollbar-track {
-    background: #eef1f5;
+    background: #b2b9c2;
 }
 
 .chat-box::-webkit-scrollbar-thumb {
@@ -61,7 +61,7 @@ body {
 }
 
 .user-message {
-    background-color: #007bff; /* Primary blue */
+    background-color: #19191a; 
     color: white;
     align-self: flex-end;
     margin-left: auto;
@@ -69,8 +69,8 @@ body {
 }
 
 .bot-message {
-    background-color: #f8f9fa; /* Light grey for bot */
-    color: #333;
+    background-color: #cfd1d3; /* Light grey for bot */
+    color: #0a0101;
     align-self: flex-start;
     border-bottom-left-radius: 5px; /* Pointy corner for bot */
 }
@@ -84,7 +84,7 @@ body {
 
 #user-input {
     flex-grow: 1;
-    border: 1px solid #e0e0e0; /* Lighter border */
+    border: 1px solid #bebaba; /* Lighter border */
     border-radius: 25px; /* More rounded */
     padding: 12px 20px;
     font-size: 15px;
@@ -93,11 +93,11 @@ body {
 }
 
 #user-input:focus {
-    border-color: #007bff; /* Highlight on focus */
+    border-color: #080909; /* Highlight on focus */
 }
 
 #send-btn {
-    background-color: #007bff; /* Primary blue */
+    background-color: #2e3031; 
     color: white;
     border: none;
     padding: 12px 25px;
@@ -111,8 +111,8 @@ body {
 }
 
 #send-btn:hover {
-    background-color: #0056b3; /* Darker blue on hover */
-    transform: translateY(-1px); /* Slight lift effect */
+    background-color: #5a6268; /* Darker blue on hover */
+    transform: translateY(-1px); /* transform은 호버됐을 때 최종상태 */
 }
 
 #send-btn:active {
@@ -139,7 +139,7 @@ body {
     position: absolute;
     top: 15px;
     left: 30px; /* Moved slightly to the right */
-    background-color: #6c757d; /* A neutral grey */
+    background-color: #0b0b0b; /* A neutral grey */
     color: white;
     border: none;
     padding: 12px 25px; /* Increased padding */
@@ -153,4 +153,5 @@ body {
 
 #new-chat-btn:hover {
     background-color: #5a6268;
+    transform: translateY(-1px);
 }
