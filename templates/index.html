@@ -10,16 +10,34 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <button id="new-chat-btn" class="new-chat-button">new chat</button>
+    <!-- Action Buttons -->
+    <div class="top-buttons">
+        <button id="new-chat-btn">New Chat</button>
+        <button id="memory-btn">Memory</button>
+    </div>
+
     <div class="chat-container">
         <div class="chat-box" id="chat-box">
             <!-- Chat messages will be appended here -->
         </div>
         <div class="chat-input">
             <input type="text" id="user-input" placeholder="메시지를 입력하세요 !">
-            <button id="send-btn">send</button>
+            <button id="send-btn">Send</button>
+            <button id="save-btn">Save Chat</button> <!-- New Save Button -->
         </div>
     </div>
+
+    <!-- Memory Modal -->
+    <div id="memory-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Saved Conversations</h2>
+            <div id="memory-list">
+                <!-- Saved conversations will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/static/js/script.js"></script>
 </body>
