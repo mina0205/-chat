@@ -1,84 +1,83 @@
-# 🤖 심심이 챗봇 (Simsimi Chatbot)
+# 심심이 (AI 챗봇)
 
-GPT API를 활용하여 개발된 간단한 웹 기반 챗봇 애플리케이션입니다. 이 챗봇은 이전 대화 내용을 기억하지 않는 무상태(stateless) 방식으로 작동합니다.
+OpenAI API와 Flask를 기반으로 한 웹 기반 AI 챗봇 애플리케이션입니다. 사용자는 회원가입 및 로그인 후 AI와 대화할 수 있으며, 이전 대화 내용을 저장하고 불러올 수 있습니다. 백엔드는 Python Flask로 구축되었으며, 프론트엔드는 기본적인 HTML, CSS, JavaScript로 구성되어 있습니다.
 
 ## ✨ 주요 기능
 
-- 사용자 친화적인 웹 기반 채팅 인터페이스
-- OpenAI GPT API를 통한 AI 기반 답변 생성
-- 챗봇의 초기 인사말 및 타이핑 애니메이션
-- '새 채팅' 버튼을 통한 대화 초기화 (UI 전용)
+-   OpenAI GPT-3.5-turbo 모델을 이용한 실시간 채팅
+-   사용자 회원가입 및 로그인 (JWT 기반 인증)
+-   안전한 비밀번호 저장을 위한 Bcrypt 해싱
+-   MongoDB를 이용한 대화 내용 저장 및 조회
 
-## 🛠️ 사용 기술
+## 🛠️ 기술 스택
 
-- **프론트엔드:** HTML, CSS, jQuery
-- **백엔드:** Python (Flask)
-- **AI:** OpenAI GPT API
+-   **Backend:** Python, Flask
+-   **Frontend:** HTML, CSS, Vanilla JavaScript
+-   **Database:** MongoDB
+-   **AI:** OpenAI API (gpt-3.5-turbo)
+-   **Authentication:** PyJWT (JSON Web Tokens), bcrypt
+-   **Deployment:** Gunicorn (추천)
 
-## 🚀 시작하기
+## ⚙️ 설치 및 실행 방법
 
-프로젝트를 로컬 환경에서 설정하고 실행하는 방법입니다.
+### 1. 프로젝트 복제
 
-### 📋 전제 조건
+```bash
+git clone https://github.com/mina0205/-chat.git
+cd 심심이
+```
 
-- Python 3.x 버전이 설치되어 있어야 합니다.
-- OpenAI API 키가 발급되어 있어야 합니다.
+### 2. 가상환경 생성 및 활성화
 
-### ⚙️ 설치 및 실행
+프로젝트의 의존성을 시스템 전체가 아닌 격리된 환경에 설치하기 위해 가상환경을 생성합니다.
 
-1.  **프로젝트 디렉토리로 이동:**
-
-    ```bash
-    cd /Users/mina/Desktop/심심이
-    ```
-
-2.  **가상 환경 설정 및 활성화:**
-
-    프로젝트 의존성 관리를 위해 가상 환경을 사용하는 것을 권장합니다.
-
+-   **macOS / Linux:**
     ```bash
     python3 -m venv venv
     source venv/bin/activate
     ```
-
-3.  **필요한 라이브러리 설치:**
-
+-   **Windows:**
     ```bash
-    pip install -r requirements.txt
+    python -m venv venv
+    .\venv\Scripts\activate
     ```
 
-4.  **환경 변수 설정 (`.env` 파일):**
+### 3. 의존성 설치
 
-    프로젝트 루트 디렉토리에 `.env` 파일을 생성하고 다음 내용을 추가합니다.
-    `YOUR_OPENAI_API_KEY`를 실제 값으로 대체하세요.
+`requirements.txt` 파일에 명시된 라이브러리들을 설치합니다.
 
-    ```dotenv
-    OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
-    ```
+```bash
+pip install -r requirements.txt
+```
 
-    *   **OpenAI API Key:** [OpenAI API Keys](https://platform.openai.com/account/api-keys)에서 발급받을 수 있습니다.
+### 4. 환경 변수 설정
 
-5.  **애플리케이션 실행:**
+프로젝트 루트 디렉토리(`.`)에 `.env` 파일을 생성하고 아래 내용을 자신의 환경에 맞게 수정하여 추가합니다.
 
-    ```bash
-    python app.py
-    ```
+```env
+# OpenAI API 키
+OPENAI_API_KEY=
 
-    서버가 `http://127.0.0.1:5002`에서 실행됩니다.
+# MongoDB 연결 정보 (선택 사항)
+MONGO_URI=
+MONGO_DB_NAME=
 
-## 🌐 챗봇 사용
+# Flask 및 JWT 보안을 위한 시크릿 키
+# 아래 명령어로 강력한 키를 생성할 수 있습니다:
+# python -c 'import secrets; print(secrets.token_hex(16))'
+FLASK_SECRET_KEY="your_strong_secret_key"
 
-웹 브라우저를 열고 `http://127.0.0.1:5000`로 접속하여 챗봇과 대화할 수 있습니다.
+# 시스템 프롬프트 파일 경로 (선택 사항)
+# 예: prompts/system.txt
+SYSTEM_PROMPT_FILE="prompts/system.txt"
+```
 
-## ⚠️ 문제 해결
+### 5. 서버 실행
 
--   **`ModuleNotFoundError`:** 가상 환경이 활성화되었는지 확인하고 `pip install -r requirements.txt`를 다시 실행하세요.
--   **`Address already in use`:** 해당 포트(`5002`)를 사용 중인 다른 프로세스를 종료하거나 `app.py`에서 포트 번호를 변경하세요.
--   **`Incorrect API key provided`:** `.env` 파일의 `OPENAI_API_KEY`가 올바른지 확인하세요.
--   **`You exceeded your current quota`:** OpenAI 계정의 사용량 및 결제 설정을 확인하세요.
+아래 명령어를 실행하여 Flask 개발 서버를 시작합니다.
 
-## 💡 향후 개선 사항 (선택 사항)
+```bash
+python app.py
+```
 
-- 사용자 인증 기능 추가
-- 실시간 스트리밍 답변 구현
-- 더 다양한 UI/UX 개선
+서버가 정상적으로 실행되면, 웹 브라우저에서 `http://127.0.0.1:5001` 주소로 접속할 수 있습니다.
