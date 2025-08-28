@@ -36,6 +36,56 @@ else:
     print("⚠️ WARNING: MONGO_URI or MONGO_DB_NAME is not set.")
     print("Database features will be disabled.")
 
+# ───────────────── App Secret Key ─────────────────
+# IMPORTANT: .env 파일에 FLASK_SECRET_KEY=... 를 추가해야 합니다.
+# ex: openssl rand -hex 16
+app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "default_secret_key_for_dev")
+
+# ───────────────── 추가 Collection ─────────────────
+users_collection = db["users"] if db is not None else None
+
+# ───────────────── Bcrypt (Password Hashing) ─────────────────
+import bcrypt
+
+def hash_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+def check_password(hashed_password, password):
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
+
+# ───────────────── JWT (Authentication Tokens) ─────────────────
+import jwt
+from datetime import timedelta
+
+def encode_auth_token(user_id):
+    try:
+        # Read expiration from env var, default to 24 hours
+        expire_hours = int(os.getenv("JWT_EXPIRES_HOURS", 24))
+        payload = {
+            'exp': datetime.utcnow() + timedelta(hours=expire_hours),
+            'iat': datetime.utcnow(),
+            'sub': user_id # Subject (who the token belongs to)
+        }
+        return jwt.encode(
+            payload,
+            app.config.get('SECRET_KEY'),
+            algorithm='HS256'
+        )
+    except Exception as e:
+        return e
+
+def decode_auth_token(auth_token):
+    try:
+        payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'), algorithms=['HS256'])
+        return payload['sub']
+    except jwt.ExpiredSignatureError:
+        return 'Signature expired. Please log in again.'
+    except jwt.InvalidTokenError:
+        return 'Invalid token. Please log in again.'
+
+# ───────────────── Email Validator ─────────────────
+from email_validator import validate_email, EmailNotValidError
+
 # ───────────────── OpenAI ─────────────────
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -94,15 +144,91 @@ def normalize_history(received_history, user_message):
 
 
 # ───────────────── 라우트 ─────────────────
+
+# ───────────────── Auth Routes ─────────────────
+
+from functools import wraps
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            # Expecting "Bearer <token>"
+            token = request.headers['Authorization'].split(" ")[1]
+        
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+        
+        try:
+            user_id = decode_auth_token(token)
+            if isinstance(user_id, str) and ('expired' in user_id or 'invalid' in user_id):
+                 return jsonify({'message': user_id}), 401
+        except Exception as e:
+            return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 401
+            
+        # Pass the user_id from the token to the decorated function
+        return f(user_id, *args, **kwargs)
+    return decorated
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    try:
+        validate_email(email)
+    except EmailNotValidError as e:
+        return jsonify({"error": str(e)}), 400
+
+    if users_collection is not None and users_collection.find_one({"email": email}):
+        return jsonify({"error": "User already exists"}), 409
+
+    hashed_password = hash_password(password)
+    if users_collection is not None:
+        users_collection.insert_one({"email": email, "password": hashed_password})
+
+    return jsonify({"message": "User registered successfully"}), 201
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    user = users_collection.find_one({"email": email}) if users_collection is not None else None
+    if not user or not check_password(user["password"], password):
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    auth_token = encode_auth_token(user["email"])
+    return jsonify({"token": auth_token})
+
+# Routes for serving HTML pages
+@app.route("/login-page")
+def login_page():
+    return render_template("login.html")
+
+@app.route("/register-page")
+def register_page():
+    return render_template("register.html")
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
-def chat():
+@token_required
+def chat(user_id):
     user_message = request.json.get("message", "")
     received_history = request.json.get("history", [])
-    user_id = request.json.get("user_id", "anonymous")
 
     system_prompt = load_system_prompt()
     system_message = {"role": "system", "content": system_prompt}
@@ -128,8 +254,8 @@ def chat():
         return jsonify({"error": "model_call_failed"}), 500
 
 @app.route("/save-chat", methods=["POST"])
-def save_chat():
-    user_id = request.json.get("user_id")
+@token_required
+def save_chat(user_id):
     chat_id = request.json.get("chat_id")
     history = request.json.get("history")
 
@@ -157,8 +283,8 @@ def save_chat():
         return jsonify({"error": "Database not connected"}), 500
 
 @app.route("/get-conversations", methods=["GET"])
-def get_conversations():
-    user_id = request.args.get("user_id")
+@token_required
+def get_conversations(user_id):
     if not user_id:
         return jsonify({"error": "user_id is required"}), 400
 

@@ -1,10 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
 
-body {
+#onlyAuth {
     font-family: 'Noto Sans KR', sans-serif;
-    background-color: rgba(221, 221, 233, 0.9); /* 바탕색 */
+    background-color: rgba(246, 249, 246, 0.784); /* 바탕색 */
     display: flex;
-    justify-content: center;
+    justify-content:center; /* 오른쪽 정렬 */
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    color: #333;
+}
+#onlyIndex{
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: rgba(246, 249, 246, 0.784); /* 바탕색 */
+    display: flex;
+    justify-content: flex-end; /* 오른쪽 정렬 */
+    padding-right: 130px; /* 오른쪽 여백 */
     align-items: center;
     min-height: 100vh;
     margin: 0;
@@ -12,8 +23,8 @@ body {
 }
 
 .chat-container {
-    width: 420px; /* Slightly wider */
-    height: 650px; /* Slightly taller */
+    width: 950px; /* Slightly wider */
+    height: 750px; /* Slightly taller */
     background-color: #ffffff;
     border-radius: 15px; /* More rounded corners */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Stronger, softer shadow */
@@ -136,15 +147,12 @@ body {
 
 /* New Chat Button styles */
 #new-chat-btn {
-    position: absolute;
-    top: 50px;
-    left: 1px; /* Moved slightly to the right */
     background-color: #0b0b0b; /* A neutral grey */
     color: white;
     border: none;
-    padding: 12px 25px; /* Increased padding */
+    padding: 15px 25px; /* Increased padding */
     border-radius: 20px;
-    font-size: 14px;   /* Increased font size */
+    font-size: 15px;   /* Increased font size */
     cursor: pointer;
     z-index: 10; /* Ensure it's above chat-box */
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -161,36 +169,61 @@ body {
 
 .top-buttons {
     position: absolute;
-    top:30px;
-    left: 20px;
+    top:50px;
+    left: 80px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     z-index: 10;
 }
 
-#memory-btn, #save-btn {
+#memory-btn {
     background-color: #0b0b0b;
     color: white;
     border: none;
-    padding: 10px 15px;
+    padding: 15px 15px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
-#memory-btn:hover, #save-btn:hover {
+#memory-btn:hover{
     background-color: #5a6268;
     transform: translateY(-1px);
 }
 
 #save-btn {
-    background-color: #28a745;
+    background-color: #1c9839;
+    color: white;
+    border: none;
+    padding: 6px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.1s;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
     margin-left: 10px;
 }
 #save-btn:hover {
-    background-color: #218838;
+    background-color: #63d07a;
+    transform: translateY(-1px);
+}
+
+#logout-btn {
+    background-color: #0a0001;
+    font-size: 15px;
+    color: white;
+    border: none;
+    padding: 15px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+#logout-btn:hover {
+    background-color: #c43745;
+    transform: translateY(-1px);
 }
 
 
@@ -207,10 +240,10 @@ body {
 }
 
 .modal-content {
-    background-color: #e3eae6;
+    background-color: #f5f8f6;
     margin: 10% auto;
     padding: 20px;
-    border: 2px solid #888;
+    border: 2px solid #717372;
     width: 80%;
     max-width: 600px;
     border-radius: 10px;
@@ -246,7 +279,7 @@ body {
 
 /* Styles for Memory List Items */
 .conversation-item {
-    border: 2px solid #ccc;
+    border: 2px solid #164824;
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 10px;
@@ -255,7 +288,7 @@ body {
 }
 
 .conversation-item:hover {
-    background-color: #f0f0f0;
+    background-color: #a1d5b5;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -263,11 +296,63 @@ body {
     font-weight: bold;
     font-size: 16px;
     margin: 0 0 5px 0;
-    color: #0a0a0a;
+    color: #110303;
 }
 
 .conversation-date {
     font-size: 12px;
     color: #3f3d3d;
     margin: 0;
+}
+
+/* Auth Form Styles */
+.auth-container {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.auth-container h2 {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.auth-container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #000204;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.auth-container button:hover {
+    background-color: #545658;
+}
+
+.error-message {
+    color: red;
+    margin-top: 15px;
 }

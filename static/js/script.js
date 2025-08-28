@@ -1,15 +1,28 @@
 $(document).ready(function() {
+    // --- 1. Authentication Check ---
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        window.location.href = '/login-page';
+        return; // Stop further execution if not logged in
+    }
+
+    // --- 2. Global AJAX Setup for Auth Header ---
+    $.ajaxSetup({
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        }
+    });
+
+    // --- 3. State Management ---
     let conversationHistory = [];
     let currentChatId = null;
-    const userId = localStorage.getItem('user_id') || crypto.randomUUID();
-    localStorage.setItem('user_id', userId);
 
-    // --- Helper Functions ---
+    // --- 4. Helper Functions ---
     function startNewChat() {
         currentChatId = crypto.randomUUID();
         conversationHistory = [];
         $('#chat-box').empty();
-        $('#chat-box').append('<div class="message bot-message">안녕! 심심할 땐 나 심심이랑 놀자☺️ 뭐하고 놀고싶어 ?</div>');
+        $('#chat-box').append('<div class="message bot-message">안녕! 난 심심이야😊 무슨 이야기할까?</div>');
         console.log(`Started new chat with ID: ${currentChatId}`);
     }
 
@@ -29,13 +42,18 @@ $(document).ready(function() {
         console.log(`Loaded chat with ID: ${currentChatId}`);
     }
 
-    // --- Event Handlers ---
+    // --- 5. Event Handlers ---
     $('#send-btn').on('click', sendMessage);
     $('#user-input').on('keypress', function(e) {
         if (e.which === 13) sendMessage();
     });
 
     $('#new-chat-btn').on('click', startNewChat);
+
+    $('#logout-btn').on('click', function() {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login-page';
+    });
 
     $('#save-btn').on('click', function() {
         if (conversationHistory.length === 0) {
@@ -47,7 +65,6 @@ $(document).ready(function() {
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                user_id: userId,
                 chat_id: currentChatId,
                 history: conversationHistory
             }),
@@ -55,32 +72,28 @@ $(document).ready(function() {
                 alert("대화가 저장되었습니다!");
                 console.log(response.message);
             },
-            error: function() {
-                alert("대화 저장에 실패했습니다.");
+            error: function(xhr) {
+                alert(`대화 저장 실패: ${xhr.responseJSON?.message || 'Unknown error'}`);
             }
         });
     });
 
     $('#memory-btn').on('click', function() {
         $.ajax({
-            url: `/get-conversations?user_id=${userId}`,
+            url: '/get-conversations',
             type: 'GET',
             success: function(response) {
                 const memoryList = $('#memory-list');
                 memoryList.empty();
                 if (response.conversations && response.conversations.length > 0) {
                     response.conversations.forEach(conv => {
-                        const firstUserMessage = conv.messages.find(m => m.role === 'user')?.content || '(No user message)';
-                        const convDiv = $(`<div class="conversation-item" data-chat-id="${conv.chat_id}"></div>`);
+                        const firstUserMessage = conv.messages.find(m => m.role === 'user')?.content || '(제목 없음)';
+                        const convDiv = $(`<div class="conversation-item"></div>`);
                         convDiv.append(`<p class="conversation-title">${firstUserMessage.substring(0, 30)}...</p>`);
                         convDiv.append(`<p class="conversation-date">Saved: ${new Date(conv.saved_at).toLocaleString()}</p>`);
-                        
-                        // Store full conversation data with the element
                         convDiv.data('conversation', conv);
-
                         convDiv.on('click', function() {
-                            const chatData = $(this).data('conversation');
-                            loadChat(chatData);
+                            loadChat($(this).data('conversation'));
                         });
                         memoryList.append(convDiv);
                     });
@@ -89,8 +102,8 @@ $(document).ready(function() {
                 }
                 $('#memory-modal').show();
             },
-            error: function() {
-                alert("저장된 대화를 불러오는 데 실패했습니다.");
+            error: function(xhr) {
+                alert(`저장된 대화 로딩 실패: ${xhr.responseJSON?.message || 'Unknown error'}`);
             }
         });
     });
@@ -105,7 +118,7 @@ $(document).ready(function() {
         }
     });
 
-    // --- Core Functions ---
+    // --- 6. Core Functions ---
     function sendMessage() {
         const userInput = $('#user-input').val();
         if (userInput.trim() === '') return;
@@ -125,8 +138,7 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({
                 message: userInput,
-                history: conversationHistory.slice(0, -1), // Send history *before* the new message
-                user_id: userId
+                history: conversationHistory.slice(0, -1)
             }),
             success: function(response) {
                 $('.typing-indicator').remove();
@@ -135,14 +147,20 @@ $(document).ready(function() {
                 $('#chat-box').append(`<div class="message bot-message">${response.reply}</div>`);
                 $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
             },
-            error: function() {
+            error: function(xhr) {
                 $('.typing-indicator').remove();
-                $('#chat-box').append('<div class="message bot-message">죄송해요, 오류가 발생했어요.</div>');
-                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+                if (xhr.status === 401) {
+                    alert("인증이 만료되었습니다. 다시 로그인해 주세요.");
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/login-page';
+                } else {
+                    $('#chat-box').append('<div class="message bot-message">죄송해요, 오류가 발생했어요.</div>');
+                    $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+                }
             }
         });
     }
 
-    // Initial load
+    // --- 7. Initial load ---
     startNewChat();
 });

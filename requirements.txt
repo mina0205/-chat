@@ -4,12 +4,14 @@ aiosignal==1.4.0
 annotated-types==0.7.0
 anyio==4.10.0
 attrs==25.3.0
+bcrypt==4.3.0
 blinker==1.9.0
 certifi==2025.8.3
 charset-normalizer==3.4.3
 click==8.2.1
 distro==1.9.0
 dnspython==2.7.0
+email-validator==2.3.0
 Flask==3.1.1
 frozenlist==1.7.0
 h11==0.16.0
@@ -25,6 +27,7 @@ openai==0.28.0
 propcache==0.3.2
 pydantic==2.11.7
 pydantic_core==2.33.2
+PyJWT==2.10.1
 pymongo==4.14.0
 python-dotenv==1.1.1
 requests==2.32.4
