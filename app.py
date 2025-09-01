@@ -48,11 +48,14 @@ users_collection = db["users"] if db is not None else None
 import bcrypt
 
 def hash_password(password):
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    #해시된 비밀번호를 디코딩해서 문자열 반환
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def check_password(hashed_password, password):
+    # 만약 DB에서 불러온 hashed_password가 str이라면 bytes로 변환
+    if isinstance(hashed_password, str):
+        hashed_password = hashed_password.encode('utf-8')
     return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
-
 # ───────────────── JWT (Authentication Tokens) ─────────────────
 import jwt
 from datetime import timedelta
